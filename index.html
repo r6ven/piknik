@@ -50,23 +50,1093 @@ function drawMap(){drawBackground();for(let i=0;i<36;i++){const x=(i*73+45)%W,y=
 function startMini(id){if(id==='lemon'){state='lemon';modePill.textContent='🍋 Limon';mini={id,time:45,items:[],spawn:0,score:0,x:W/2,speed:clamp(W*.72,250,360),slow:0};showMessage('Limonlar artık dallardan düşüyor. Yaprak -2 sn, çürük limon -1 puan.',3)}if(id==='plum'){state='plum';modePill.textContent='🟣 Erik';mini=createPlumMini();showMessage('Her erikten sonra erik, diken ve salyangozlar yeniden dizilecek.',3)}if(id==='strawberry'){state='strawberry';modePill.textContent='🍓 Çilek';mini=createStrawberryMini();showMessage('Parlayan çalıları ezberle. Toplamak için TOPLA tuşuna bas.',3)}}
 function restartCurrent(){if(state==='lemon'||state==='plum'||state==='strawberry'){const id=state;startMini(id);showMessage('Mini oyun yeniden başladı.',2)}else{basket.strawberry=0;basket.lemon=0;basket.plum=0;basket.heart=0;played.strawberry=played.lemon=played.plum=false;state='map';mini=null;turtle.x=W*.5;turtle.y=H*.67;showMessage('Test reseti: sepet boşaldı, bahçeye döndün.',3)}}restartBtn.addEventListener('click',restartCurrent);
 function endMini(){if(!mini)return;if(mini.id==='lemon'){basket.lemon+=mini.score;basket.heart+=Math.floor(mini.score/10);played.lemon=true;showMessage(`${mini.score} limon sepete girdi. Limonata ihtimali güçlendi.`,4)}if(mini.id==='plum'){basket.plum+=mini.score;basket.heart+=Math.floor(mini.score/7);played.plum=true;showMessage(`${mini.score} erik toplandı. Sepetin mor tarafı gururlu.`,4)}if(mini.id==='strawberry'){basket.strawberry+=mini.score;basket.heart+=mini.hearts+Math.floor(mini.score/8);played.strawberry=true;showMessage(`${mini.score} çilek ve ${mini.hearts} kalp çileği bulundu. Sepet kızardı.`,4)}state='map';mini=null;turtle.x=W*.5;turtle.y=H*.67}
-function updateLemon(dt){mini.time-=dt;if(mini.time<=0)return endMini();if(mini.slow>0)mini.slow-=dt;const a=axis(),speed=mini.speed*(mini.slow>0?.55:1);mini.x+=a.x*speed*dt;mini.x=clamp(mini.x,44*SCALE,W-44*SCALE);if(Math.abs(a.x)>.1)turtle.face=a.x>0?1:-1;turtle.bob+=(Math.abs(a.x)>.05?10:3)*dt;mini.spawn-=dt;if(mini.spawn<=0){const roll=Math.random();let type='lemon';if(roll>.92)type='gold';else if(roll>.80)type='leaf';else if(roll>.70)type='rotten';mini.items.push({x:rand(W*.14,W*.86),y:rand(100*SCALE,155*SCALE),vy:rand(135,225)+(45-mini.time)*2,type,rot:rand(-1,1)});mini.spawn=rand(.28,.58)}for(const item of mini.items){item.y+=item.vy*dt;item.rot+=dt;if(item.y>H-72*SCALE&&Math.abs(item.x-mini.x)<38*SCALE&&item.y<H-24*SCALE){item.dead=true;if(item.type==='gold'){mini.score+=3;pop(item.x,item.y,'+3 🍋')}if(item.type==='lemon'){mini.score+=1;pop(item.x,item.y,'+1 🍋')}if(item.type==='leaf'){mini.time=Math.max(0,mini.time-2);mini.slow=1;pop(item.x,item.y,'-2 sn 🍃')}if(item.type==='rotten'){mini.score=Math.max(0,mini.score-1);pop(item.x,item.y,'-1 🤢')}}if(item.y>H+40)item.dead=true}mini.items=mini.items.filter(i=>!i.dead)}
-function drawLemon(){ctx.fillStyle='#cceebb';ctx.fillRect(0,0,W,H);ctx.save();ctx.strokeStyle='#7a5a32';ctx.lineWidth=9*SCALE;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(W*.5,178*SCALE);ctx.lineTo(W*.5,92*SCALE);ctx.moveTo(W*.5,112*SCALE);ctx.lineTo(W*.22,82*SCALE);ctx.moveTo(W*.5,113*SCALE);ctx.lineTo(W*.78,78*SCALE);ctx.moveTo(W*.5,137*SCALE);ctx.lineTo(W*.30,138*SCALE);ctx.moveTo(W*.5,134*SCALE);ctx.lineTo(W*.70,135*SCALE);ctx.stroke();ctx.fillStyle='#7a5a32';drawRoundedRect(W*.5-16*SCALE,145*SCALE,32*SCALE,88*SCALE,12*SCALE);ctx.fill();ctx.fillStyle='#8cc56f';ctx.beginPath();ctx.ellipse(W*.50,82*SCALE,W*.42,70*SCALE,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255,255,255,.25)';ctx.beginPath();ctx.ellipse(W*.32,68*SCALE,42*SCALE,26*SCALE,-.25,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(W*.66,62*SCALE,50*SCALE,30*SCALE,.2,0,Math.PI*2);ctx.fill();ctx.restore();for(const item of mini.items){ctx.save();ctx.translate(item.x,item.y);ctx.rotate(item.rot);if(item.type==='leaf'){ctx.fillStyle='#77bd65';ctx.beginPath();ctx.ellipse(0,0,15*SCALE,7*SCALE,0,0,Math.PI*2);ctx.fill()}else{ctx.fillStyle=item.type==='gold'?'#ffe87a':item.type==='rotten'?'#a47745':'#ffd24a';ctx.beginPath();ctx.ellipse(0,0,14*SCALE,20*SCALE,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(112,89,28,.2)';ctx.lineWidth=2*SCALE;ctx.stroke();if(item.type==='rotten')drawText('×',0,0,16*SCALE,'center','#5b3c20','900')}ctx.restore()}drawTurtle(mini.x,H-52*SCALE,1,'happy');ctx.fillStyle='#b87945';drawRoundedRect(mini.x-38*SCALE,H-54*SCALE,76*SCALE,21*SCALE,9*SCALE);ctx.fill();drawText(`Yakalanan: ${mini.score}`,W/2,H-18*SCALE,18*SCALE,'center','#4b3b2f','800');if(mini.slow>0)drawText('Yaprak hışırdadı, kaplumbağa yavaşladı.',W/2,34*SCALE,12*SCALE,'center','#6d5b44','800')}
-function createPlumMini(){const grid=['11111111111','10001000001','10101011101','10100010001','10111010111','10000010001','11101110101','10001000101','10111011101','10000000001','11111111111'],rows=grid.length,cols=grid[0].length,cell=Math.floor(Math.min((W-26)/cols,(H-122*SCALE)/rows,42*SCALE));const m={id:'plum',time:60,score:0,grid,cell,ox:(W-cols*cell)/2,oy:74*SCALE,player:{cx:1,cy:1,px:0,py:0,moveT:0,fromX:1,fromY:1,toX:1,toY:1,startX:1,startY:1},plum:{cx:7,cy:5},hazards:[],snails:[],snailTick:0};m.player.px=m.ox+m.player.cx*m.cell+m.cell/2;m.player.py=m.oy+m.player.cy*m.cell+m.cell/2;resetPlumBoard(m);return m}
-function cellKey(x,y){return x+','+y}function blockedSet(m){const set=new Set();for(const h of m.hazards)set.add(cellKey(h.cx,h.cy));return set}function reachableCells(m){const q=[{x:m.player.cx,y:m.player.cy}],seen=new Set([cellKey(m.player.cx,m.player.cy)]),bad=blockedSet(m),out=[];while(q.length){const c=q.shift();out.push(c);for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=c.x+d[0],ny=c.y+d[1],k=cellKey(nx,ny);if(seen.has(k)||bad.has(k))continue;if(m.grid[ny]&&m.grid[ny][nx]==='0'){seen.add(k);q.push({x:nx,y:ny})}}}return out}function isOccupied(m,x,y){return m.hazards.some(h=>h.cx===x&&h.cy===y)||m.snails.some(s=>s.cx===x&&s.cy===y)||(m.player.cx===x&&m.player.cy===y)}
-function resetPlumBoard(m){m.hazards=[];m.snails=[];let cells=[];for(let y=0;y<m.grid.length;y++)for(let x=0;x<m.grid[y].length;x++)if(m.grid[y][x]==='0'&&!(x===m.player.cx&&y===m.player.cy)&&!(x<3&&y<3))cells.push({x,y});cells=cells.sort(()=>Math.random()-.5);for(const c of cells){if(m.hazards.length>=6)break;m.hazards.push({cx:c.x,cy:c.y})}let reach=reachableCells(m).filter(c=>!(c.x===m.player.cx&&c.y===m.player.cy));if(reach.length<6){m.hazards=[];reach=reachableCells(m).filter(c=>!(c.x===m.player.cx&&c.y===m.player.cy))}const plumChoices=reach.filter(c=>!isOccupied(m,c.x,c.y));const p=plumChoices[Math.floor(Math.random()*plumChoices.length)]||reach[0]||{x:1,y:1};m.plum.cx=p.x;m.plum.cy=p.y;const snailPool=reach.filter(c=>!isOccupied(m,c.x,c.y)&&!(c.x===m.plum.cx&&c.y===m.plum.cy)).sort(()=>Math.random()-.5);for(let i=0;i<2&&i<snailPool.length;i++){m.snails.push({cx:snailPool[i].x,cy:snailPool[i].y,dir:Math.random()<.5?1:-1,axis:Math.random()<.5?'x':'y'})}}
-function isHazardCell(m,x,y){return m.hazards.some(h=>h.cx===x&&h.cy===y)}function isPlumOpen(m,x,y){return m.grid[y]&&m.grid[y][x]==='0'&&!isHazardCell(m,x,y)}function sendPlumStart(){const p=mini.player;p.cx=p.startX;p.cy=p.startY;p.fromX=p.cx;p.fromY=p.cy;p.toX=p.cx;p.toY=p.cy;p.moveT=0;p.px=mini.ox+p.cx*mini.cell+mini.cell/2;p.py=mini.oy+p.cy*mini.cell+mini.cell/2}
-function checkPlumDanger(){const p=mini.player;if(isHazardCell(mini,p.cx,p.cy)){mini.time=Math.max(0,mini.time-2);pop(p.px,p.py,'-2 sn 🌵');p.cx=p.fromX;p.cy=p.fromY;p.toX=p.cx;p.toY=p.cy;p.moveT=0;p.px=mini.ox+p.cx*mini.cell+mini.cell/2;p.py=mini.oy+p.cy*mini.cell+mini.cell/2;return}for(const s of mini.snails){if(s.cx===p.cx&&s.cy===p.cy){mini.time=Math.max(0,mini.time-3);pop(p.px,p.py,'-3 sn 🐌');sendPlumStart();return}}}
-function moveSnails(dt){mini.snailTick-=dt;if(mini.snailTick>0)return;mini.snailTick=.75;for(const s of mini.snails){const nx=s.cx+(s.axis==='x'?s.dir:0),ny=s.cy+(s.axis==='y'?s.dir:0);if(isPlumOpen(mini,nx,ny)&&!(nx===mini.plum.cx&&ny===mini.plum.cy)&&!(nx===mini.player.cx&&ny===mini.player.cy)){s.cx=nx;s.cy=ny}else{s.dir*=-1;if(Math.random()<.35)s.axis=s.axis==='x'?'y':'x'}}}
-function updatePlum(dt){mini.time-=dt;if(mini.time<=0)return endMini();moveSnails(dt);const p=mini.player;if(p.moveT>0){p.moveT-=dt*7.5;const t=1-Math.max(0,p.moveT),sm=t*t*(3-2*t);p.px=mini.ox+(p.fromX+(p.toX-p.fromX)*sm)*mini.cell+mini.cell/2;p.py=mini.oy+(p.fromY+(p.toY-p.fromY)*sm)*mini.cell+mini.cell/2;if(p.moveT<=0){p.cx=p.toX;p.cy=p.toY;p.px=mini.ox+p.cx*mini.cell+mini.cell/2;p.py=mini.oy+p.cy*mini.cell+mini.cell/2;checkPlumDanger()}}else{const a=axis();let nx=p.cx,ny=p.cy;if(Math.abs(a.x)>Math.abs(a.y)){if(a.x<-.35)nx--;else if(a.x>.35)nx++}else{if(a.y<-.35)ny--;else if(a.y>.35)ny++}if(nx!==p.cx||ny!==p.cy){if(mini.grid[ny]&&mini.grid[ny][nx]==='0'){p.fromX=p.cx;p.fromY=p.cy;p.toX=nx;p.toY=ny;p.moveT=1;if(nx>p.cx)turtle.face=1;if(nx<p.cx)turtle.face=-1}}}if(p.cx===mini.plum.cx&&p.cy===mini.plum.cy&&p.moveT<=0){mini.score++;pop(p.px,p.py,'+1 🟣');resetPlumBoard(mini);pop(p.px,p.py-18*SCALE,'Harita değişti')}turtle.bob+=7*dt}
-function drawPlum(){ctx.fillStyle='#e8dbff';ctx.fillRect(0,0,W,H);drawText('Erik Labirenti',W/2,38*SCALE,24*SCALE,'center','#59467d','900');const m=mini;for(let y=0;y<m.grid.length;y++)for(let x=0;x<m.grid[y].length;x++){const px=m.ox+x*m.cell,py=m.oy+y*m.cell;if(m.grid[y][x]==='1'){ctx.fillStyle='#8c73bd';drawRoundedRect(px+2,py+2,m.cell-4,m.cell-4,9*SCALE);ctx.fill()}else{ctx.fillStyle='rgba(255,255,255,.45)';drawRoundedRect(px+3,py+3,m.cell-6,m.cell-6,10*SCALE);ctx.fill()}}for(const h of m.hazards)drawText('🌵',m.ox+h.cx*m.cell+m.cell/2,m.oy+h.cy*m.cell+m.cell/2,20*SCALE);for(const s of m.snails)drawText('🐌',m.ox+s.cx*m.cell+m.cell/2,m.oy+s.cy*m.cell+m.cell/2,20*SCALE);const px=m.ox+m.plum.cx*m.cell+m.cell/2,py=m.oy+m.plum.cy*m.cell+m.cell/2;ctx.fillStyle='#7f4bc7';ctx.beginPath();ctx.ellipse(px,py,14*SCALE,17*SCALE,.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255,255,255,.34)';ctx.beginPath();ctx.arc(px-4*SCALE,py-6*SCALE,3*SCALE,0,Math.PI*2);ctx.fill();drawTurtle(m.player.px,m.player.py,Math.min(.78,m.cell/42),'happy');drawText(`Erik: ${m.score}   Diken: -2sn   Salyangoz: -3sn`,W/2,H-18*SCALE,13.5*SCALE,'center','#4b3b2f','800')}
-function createStrawberryMini(){const bushes=[];let tries=0;const targetCount=14,minD=68*SCALE;while(bushes.length<targetCount&&tries<800){tries++;const b={x:rand(50*SCALE,W-50*SCALE),y:rand(96*SCALE,H-58*SCALE),target:false,heart:false,found:false,wrong:false,snail:0,wiggle:rand(0,10)};if(bushes.every(o=>dist(o.x,o.y,b.x,b.y)>minD))bushes.push(b)}while(bushes.length<targetCount){bushes.push({x:rand(50*SCALE,W-50*SCALE),y:rand(96*SCALE,H-58*SCALE),target:false,heart:false,found:false,wrong:false,snail:0,wiggle:rand(0,10)})}const m={id:'strawberry',time:50,score:0,hearts:0,bushes,x:W/2,y:H*.68,speed:moveSpeed(),wave:0,preview:0,remaining:0,combo:0,slow:0,cooldown:0};newStrawberryWave(m);return m}
-function newStrawberryWave(m){for(const b of m.bushes){b.target=false;b.heart=false;b.found=false;b.wrong=false;b.snail=0}const choices=[...m.bushes].sort(()=>Math.random()-.5).slice(0,4);for(const b of choices){b.target=true;b.heart=Math.random()<.18}m.wave++;m.preview=1.75;m.remaining=choices.length;m.cooldown=0}
-function nearestBush(m){let best=null,bd=9999;for(const b of m.bushes){const d=dist(m.x,m.y,b.x,b.y);if(d<bd){bd=d;best=b}}return{b:best,d:bd}}
-function inspectStrawberryBush(){if(mini.preview>0||mini.cooldown>0)return;const n=nearestBush(mini),b=n.b;if(!b||n.d>36*SCALE){pop(mini.x,mini.y-22*SCALE,'Yaklaş');return}if(b.target&&!b.found){b.found=true;mini.score++;mini.remaining--;mini.combo++;if(b.heart){mini.hearts++;pop(b.x,b.y,'+1 ❤️🍓')}else pop(b.x,b.y,'+1 🍓');if(mini.combo>0&&mini.combo%3===0){mini.score+=2;pop(b.x,b.y-18*SCALE,'Kombo +2!')}if(mini.remaining<=0){mini.cooldown=.55;pop(mini.x,mini.y-28*SCALE,'Yeni koku geliyor')}}else if(!b.target&&!b.wrong){b.wrong=true;b.snail=1.4;mini.combo=0;mini.slow=.95;mini.time=Math.max(0,mini.time-1.5);pop(b.x,b.y,'-1.5 sn 🐌')}}
-function updateStrawberry(dt){mini.time-=dt;if(mini.time<=0)return endMini();if(mini.cooldown>0){mini.cooldown-=dt;if(mini.cooldown<=0)newStrawberryWave(mini)}if(mini.preview>0)mini.preview-=dt;if(mini.slow>0)mini.slow-=dt;const a=axis(),speed=mini.speed*(mini.slow>0?.58:1);if(a.x||a.y){mini.x+=a.x*speed*dt;mini.y+=a.y*speed*dt;if(Math.abs(a.x)>.1)turtle.face=a.x>0?1:-1}mini.x=clamp(mini.x,34*SCALE,W-34*SCALE);mini.y=clamp(mini.y,62*SCALE,H-34*SCALE);turtle.bob+=(a.x||a.y?10:4)*dt;for(const b of mini.bushes){b.wiggle+=.025;if(b.snail>0)b.snail-=dt}if(keys.action){keys.action=false;actionBuffer=0;inspectStrawberryBush()}}
-function drawBush(b){const near=dist(mini.x,mini.y,b.x,b.y)<58*SCALE&&!b.found&&!b.wrong,visible=b.target&&(mini.preview>0||b.found),hint=b.target&&!b.found&&mini.preview<=0&&near;ctx.save();ctx.translate(b.x,b.y+Math.sin(b.wiggle)*2);ctx.fillStyle=b.wrong?'rgba(126,142,86,.45)':near?'#8fd179':'#78bd65';ctx.beginPath();ctx.ellipse(-10*SCALE,0,16*SCALE,10*SCALE,-.5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(9*SCALE,0,18*SCALE,11*SCALE,.5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(0,-7*SCALE,16*SCALE,10*SCALE,0,0,Math.PI*2);ctx.fill();if(visible||hint){ctx.strokeStyle=b.heart?'rgba(255,120,150,.95)':'rgba(255,255,255,.9)';ctx.lineWidth=3*SCALE;ctx.beginPath();ctx.arc(0,0,28*SCALE,0,Math.PI*2);ctx.stroke()}if(visible){if(b.heart)drawText('❤️',0,-12*SCALE,15*SCALE);ctx.fillStyle='#ff6680';ctx.beginPath();ctx.moveTo(0,14*SCALE);ctx.bezierCurveTo(-16*SCALE,-4*SCALE,-8*SCALE,-18*SCALE,0,-10*SCALE);ctx.bezierCurveTo(8*SCALE,-18*SCALE,16*SCALE,-4*SCALE,0,14*SCALE);ctx.fill();ctx.fillStyle='#fff1a6';ctx.fillRect(-3*SCALE,-2*SCALE,2*SCALE,2*SCALE);ctx.fillRect(4*SCALE,2*SCALE,2*SCALE,2*SCALE);ctx.fillRect(-7*SCALE,5*SCALE,2*SCALE,2*SCALE)}if(b.snail>0)drawText('🐌',0,0,20*SCALE);ctx.restore()}
-function drawStrawberry(){ctx.fillStyle='#cdefbc';ctx.fillRect(0,0,W,H);drawText('Kokuyu Hatırla',W/2,32*SCALE,23*SCALE,'center','#6a4a38','900');const info=mini.preview>0?'Parlayan çalıları ezberle':'Yaklaş ve TOPLA tuşuna bas';drawText(`${info}   Tur ${mini.wave}`,W/2,56*SCALE,12.5*SCALE,'center','#6d5b44','800');for(const b of mini.bushes)drawBush(b);drawTurtle(mini.x,mini.y,.95,'happy');const combo=mini.combo>=2?`   Kombo: ${mini.combo}`:'';drawText(`Çilek: ${mini.score}  Kalp: ${mini.hearts}${combo}`,W/2,H-18*SCALE,15*SCALE,'center','#4b3b2f','800');if(mini.slow>0)drawText('Salyangoz çıktı, kaplumbağa ağırlaştı.',W/2,H-40*SCALE,12*SCALE,'center','#6d5b44','800')}
+function updateLemon(dt){
+  if(mini.windPhase===undefined){
+    mini.windPhase=0;
+    mini.wind=0;
+    mini.difficulty=1;
+  }
+
+  mini.time-=dt;
+
+  if(mini.time<=0){
+    return endMini();
+  }
+
+  mini.difficulty=1+Math.floor((45-mini.time)/10);
+
+  if(mini.slow>0){
+    mini.slow-=dt;
+  }
+
+  mini.windPhase+=dt*.85;
+  mini.wind=Math.sin(mini.windPhase)*26+Math.sin(mini.windPhase*2.1)*10;
+
+  const a=axis();
+  const speed=mini.speed*(mini.slow>0?.55:1);
+
+  mini.x+=a.x*speed*dt;
+  mini.x=clamp(mini.x,44*SCALE,W-44*SCALE);
+
+  if(Math.abs(a.x)>.1){
+    turtle.face=a.x>0?1:-1;
+  }
+
+  turtle.bob+=(Math.abs(a.x)>.05?10:3)*dt;
+
+  mini.spawn-=dt;
+
+  if(mini.spawn<=0){
+    const branches=[
+      {x:W*.22,y:95*SCALE},
+      {x:W*.34,y:82*SCALE},
+      {x:W*.50,y:72*SCALE},
+      {x:W*.66,y:82*SCALE},
+      {x:W*.78,y:96*SCALE}
+    ];
+
+    const branch=branches[Math.floor(Math.random()*branches.length)];
+    const roll=Math.random();
+
+    let type='lemon';
+
+    if(roll>.93){
+      type='gold';
+    }else if(roll>.77){
+      type='leaf';
+    }else if(roll>.63){
+      type='rotten';
+    }
+
+    mini.items.push({
+      x:branch.x+rand(-22*SCALE,22*SCALE),
+      y:branch.y+rand(-8*SCALE,12*SCALE),
+      vx:rand(-22,22)+mini.wind*.35,
+      vy:rand(145,230)+(mini.difficulty-1)*18,
+      type,
+      rot:rand(-1,1),
+      wobble:rand(0,10)
+    });
+
+    mini.spawn=clamp(rand(.34,.64)-mini.difficulty*.035,.22,.60);
+  }
+
+  for(const item of mini.items){
+    item.wobble+=dt*4;
+    item.x+=(item.vx+mini.wind*.32+Math.sin(item.wobble)*10)*dt;
+    item.y+=item.vy*dt;
+    item.rot+=dt;
+
+    item.x=clamp(item.x,18*SCALE,W-18*SCALE);
+
+    const catchWidth=32*SCALE;
+
+    if(
+      item.y>H-72*SCALE&&
+      Math.abs(item.x-mini.x)<catchWidth&&
+      item.y<H-24*SCALE
+    ){
+      item.dead=true;
+
+      if(item.type==='gold'){
+        mini.score+=3;
+        pop(item.x,item.y,'+3 🍋');
+      }
+
+      if(item.type==='lemon'){
+        mini.score+=1;
+        pop(item.x,item.y,'+1 🍋');
+      }
+
+      if(item.type==='leaf'){
+        mini.time=Math.max(0,mini.time-2);
+        mini.slow=1.1;
+        pop(item.x,item.y,'-2 sn 🍃');
+      }
+
+      if(item.type==='rotten'){
+        mini.score=Math.max(0,mini.score-1);
+        mini.slow=.65;
+        pop(item.x,item.y,'-1 🤢');
+      }
+    }
+
+    if(item.y>H+40){
+      item.dead=true;
+    }
+  }
+
+  mini.items=mini.items.filter(i=>!i.dead);
+}
+function drawLemon(){
+  ctx.fillStyle='#cceebb';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+
+  ctx.strokeStyle='#7a5a32';
+  ctx.lineWidth=10*SCALE;
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+
+  ctx.beginPath();
+  ctx.moveTo(W*.5,190*SCALE);
+  ctx.lineTo(W*.5,82*SCALE);
+
+  ctx.moveTo(W*.5,108*SCALE);
+  ctx.lineTo(W*.18,78*SCALE);
+
+  ctx.moveTo(W*.5,104*SCALE);
+  ctx.lineTo(W*.82,74*SCALE);
+
+  ctx.moveTo(W*.5,132*SCALE);
+  ctx.lineTo(W*.25,142*SCALE);
+
+  ctx.moveTo(W*.5,130*SCALE);
+  ctx.lineTo(W*.75,142*SCALE);
+
+  ctx.moveTo(W*.38,96*SCALE);
+  ctx.lineTo(W*.30,60*SCALE);
+
+  ctx.moveTo(W*.62,94*SCALE);
+  ctx.lineTo(W*.70,58*SCALE);
+
+  ctx.stroke();
+
+  ctx.fillStyle='#7a5a32';
+  drawRoundedRect(W*.5-17*SCALE,146*SCALE,34*SCALE,92*SCALE,12*SCALE);
+  ctx.fill();
+
+  const leafGrad=ctx.createRadialGradient(W*.5,82*SCALE,30*SCALE,W*.5,90*SCALE,W*.48);
+  leafGrad.addColorStop(0,'#a6db77');
+  leafGrad.addColorStop(1,'#74b963');
+
+  ctx.fillStyle=leafGrad;
+  ctx.beginPath();
+  ctx.ellipse(W*.50,82*SCALE,W*.45,76*SCALE,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle='rgba(255,255,255,.25)';
+  ctx.beginPath();
+  ctx.ellipse(W*.32,66*SCALE,44*SCALE,27*SCALE,-.25,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(W*.67,62*SCALE,52*SCALE,30*SCALE,.2,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+
+  for(const item of mini.items){
+    ctx.save();
+
+    ctx.translate(item.x,item.y);
+    ctx.rotate(item.rot);
+
+    if(item.type==='leaf'){
+      ctx.fillStyle='#77bd65';
+
+      ctx.beginPath();
+      ctx.ellipse(0,0,16*SCALE,8*SCALE,0,0,Math.PI*2);
+      ctx.fill();
+    }else{
+      ctx.fillStyle=item.type==='gold'
+        ?'#ffe87a'
+        :item.type==='rotten'
+          ?'#a47745'
+          :'#ffd24a';
+
+      ctx.beginPath();
+      ctx.ellipse(0,0,14*SCALE,20*SCALE,0,0,Math.PI*2);
+      ctx.fill();
+
+      ctx.strokeStyle='rgba(112,89,28,.2)';
+      ctx.lineWidth=2*SCALE;
+      ctx.stroke();
+
+      if(item.type==='rotten'){
+        drawText('×',0,0,16*SCALE,'center','#5b3c20','900');
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawTurtle(mini.x,H-52*SCALE,1,'happy');
+
+  ctx.fillStyle='#b87945';
+  drawRoundedRect(mini.x-36*SCALE,H-54*SCALE,72*SCALE,21*SCALE,9*SCALE);
+  ctx.fill();
+
+  drawText(
+    `Yakalanan: ${mini.score}   Rüzgar: ${mini.wind>8?'→':mini.wind<-8?'←':'•'}`,
+    W/2,
+    H-18*SCALE,
+    15*SCALE,
+    'center',
+    '#4b3b2f',
+    '800'
+  );
+
+  if(mini.slow>0){
+    drawText(
+      'Dikkat: çürük/yaprak kaplumbağayı bozdu.',
+      W/2,
+      34*SCALE,
+      12*SCALE,
+      'center',
+      '#6d5b44',
+      '800'
+    );
+  }
+}
+function createPlumMini(){
+  const grid=[
+    '11111111111',
+    '10001000001',
+    '10101011101',
+    '10100010001',
+    '10111010111',
+    '10000010001',
+    '11101110101',
+    '10001000101',
+    '10111011101',
+    '10000000001',
+    '11111111111'
+  ];
+
+  const rows=grid.length;
+  const cols=grid[0].length;
+
+  const cell=Math.floor(
+    Math.min(
+      (W-26)/cols,
+      (H-122*SCALE)/rows,
+      42*SCALE
+    )
+  );
+
+  const m={
+    id:'plum',
+    time:60,
+    score:0,
+    level:1,
+    grid,
+    cell,
+    ox:(W-cols*cell)/2,
+    oy:74*SCALE,
+    player:{
+      cx:1,
+      cy:1,
+      px:0,
+      py:0,
+      moveT:0,
+      fromX:1,
+      fromY:1,
+      toX:1,
+      toY:1,
+      startX:1,
+      startY:1
+    },
+    plum:{cx:7,cy:5},
+    hazards:[],
+    snails:[],
+    reservedPath:new Set(),
+    snailTick:0,
+    snailStep:1.15
+  };
+
+  m.player.px=m.ox+m.player.cx*m.cell+m.cell/2;
+  m.player.py=m.oy+m.player.cy*m.cell+m.cell/2;
+
+  resetPlumBoard(m);
+
+  return m;
+}
+
+function cellKey(x,y){
+  return x+','+y;
+}
+
+function shuffleCells(arr){
+  return arr
+    .map(v=>({v,sort:Math.random()}))
+    .sort((a,b)=>a.sort-b.sort)
+    .map(o=>o.v);
+}
+
+function plumOpenCells(m){
+  const cells=[];
+
+  for(let y=0;y<m.grid.length;y++){
+    for(let x=0;x<m.grid[y].length;x++){
+      if(m.grid[y][x]==='0'){
+        cells.push({x,y});
+      }
+    }
+  }
+
+  return cells;
+}
+
+function hazardSetFrom(list){
+  const s=new Set();
+
+  for(const h of list){
+    s.add(cellKey(h.cx,h.cy));
+  }
+
+  return s;
+}
+
+function findPlumPath(m,start,target,hazards){
+  const bad=hazardSetFrom(hazards);
+  const q=[start];
+  const seen=new Set([cellKey(start.x,start.y)]);
+  const parent=new Map();
+
+  while(q.length){
+    const c=q.shift();
+
+    if(c.x===target.x&&c.y===target.y){
+      const path=[];
+      let cur=cellKey(c.x,c.y);
+
+      while(cur){
+        const [x,y]=cur.split(',').map(Number);
+        path.push({x,y});
+        cur=parent.get(cur);
+      }
+
+      return path.reverse();
+    }
+
+    for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=c.x+d[0];
+      const ny=c.y+d[1];
+      const k=cellKey(nx,ny);
+
+      if(seen.has(k))continue;
+      if(bad.has(k))continue;
+
+      if(m.grid[ny]&&m.grid[ny][nx]==='0'){
+        seen.add(k);
+        parent.set(k,cellKey(c.x,c.y));
+        q.push({x:nx,y:ny});
+      }
+    }
+  }
+
+  return null;
+}
+
+function reachablePlumCells(m,hazards){
+  const bad=hazardSetFrom(hazards);
+  const start={x:m.player.cx,y:m.player.cy};
+  const q=[start];
+  const seen=new Set([cellKey(start.x,start.y)]);
+  const out=[];
+
+  while(q.length){
+    const c=q.shift();
+    out.push(c);
+
+    for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=c.x+d[0];
+      const ny=c.y+d[1];
+      const k=cellKey(nx,ny);
+
+      if(seen.has(k))continue;
+      if(bad.has(k))continue;
+
+      if(m.grid[ny]&&m.grid[ny][nx]==='0'){
+        seen.add(k);
+        q.push({x:nx,y:ny});
+      }
+    }
+  }
+
+  return out;
+}
+
+function occupiedPlumCell(m,x,y){
+  if(m.player.cx===x&&m.player.cy===y)return true;
+  if(m.plum.cx===x&&m.plum.cy===y)return true;
+  if(m.hazards.some(h=>h.cx===x&&h.cy===y))return true;
+  if(m.snails.some(s=>s.cx===x&&s.cy===y))return true;
+
+  return false;
+}
+
+function resetPlumBoard(m){
+  m.level=1+Math.floor(m.score/2);
+  m.snailStep=Math.max(.36,1.15-m.score*.07);
+
+  const hazardCount=clamp(3+Math.floor(m.score/2),3,7);
+  const snailCount=clamp(1+Math.floor(m.score/2),1,5);
+
+  const all=plumOpenCells(m).filter(c=>{
+    if(c.x===m.player.cx&&c.y===m.player.cy)return false;
+    if(c.x<3&&c.y<3)return false;
+
+    return true;
+  });
+
+  let chosen=null;
+
+  for(let attempt=0;attempt<100;attempt++){
+    const hazards=[];
+
+    for(const c of shuffleCells(all)){
+      if(hazards.length>=hazardCount)break;
+
+      hazards.push({cx:c.x,cy:c.y});
+    }
+
+    const reachable=reachablePlumCells(m,hazards).filter(c=>{
+      if(c.x===m.player.cx&&c.y===m.player.cy)return false;
+      if(c.x<2&&c.y<2)return false;
+
+      return true;
+    });
+
+    if(reachable.length<5)continue;
+
+    const far=reachable
+      .map(c=>({
+        ...c,
+        d:Math.abs(c.x-m.player.cx)+Math.abs(c.y-m.player.cy)
+      }))
+      .sort((a,b)=>b.d-a.d);
+
+    const plumPool=far.slice(0,Math.max(1,Math.ceil(far.length*.45)));
+    const plum=plumPool[Math.floor(Math.random()*plumPool.length)];
+
+    const path=findPlumPath(
+      m,
+      {x:m.player.cx,y:m.player.cy},
+      {x:plum.x,y:plum.y},
+      hazards
+    );
+
+    if(!path||path.length<4)continue;
+
+    chosen={hazards,plum,path};
+    break;
+  }
+
+  if(!chosen){
+    chosen={
+      hazards:[],
+      plum:{x:9,y:9},
+      path:findPlumPath(m,{x:m.player.cx,y:m.player.cy},{x:9,y:9},[])||[]
+    };
+  }
+
+  m.hazards=chosen.hazards;
+  m.plum.cx=chosen.plum.x;
+  m.plum.cy=chosen.plum.y;
+  m.reservedPath=new Set(chosen.path.map(c=>cellKey(c.x,c.y)));
+
+  m.snails=[];
+
+  const reachable=reachablePlumCells(m,m.hazards);
+
+  const snailPool=shuffleCells(
+    reachable.filter(c=>{
+      if(occupiedPlumCell(m,c.x,c.y))return false;
+      if(m.reservedPath.has(cellKey(c.x,c.y)))return false;
+
+      const nearPlayer=Math.abs(c.x-m.player.cx)+Math.abs(c.y-m.player.cy);
+      const nearPlum=Math.abs(c.x-m.plum.cx)+Math.abs(c.y-m.plum.cy);
+
+      if(nearPlayer<3)return false;
+      if(nearPlum<2)return false;
+
+      return true;
+    })
+  );
+
+  for(let i=0;i<snailCount&&i<snailPool.length;i++){
+    m.snails.push({
+      cx:snailPool[i].x,
+      cy:snailPool[i].y,
+      dir:Math.random()<.5?1:-1,
+      axis:Math.random()<.5?'x':'y'
+    });
+  }
+
+  m.snailTick=m.snailStep;
+}
+
+function isHazardCell(m,x,y){
+  return m.hazards.some(h=>h.cx===x&&h.cy===y);
+}
+
+function isPlumOpen(m,x,y){
+  if(!(m.grid[y]&&m.grid[y][x]==='0'))return false;
+  if(isHazardCell(m,x,y))return false;
+  if(m.reservedPath.has(cellKey(x,y)))return false;
+  if(x===m.plum.cx&&y===m.plum.cy)return false;
+  if(x===m.player.cx&&y===m.player.cy)return false;
+
+  return true;
+}
+
+function sendPlumStart(){
+  const p=mini.player;
+
+  p.cx=p.startX;
+  p.cy=p.startY;
+  p.fromX=p.cx;
+  p.fromY=p.cy;
+  p.toX=p.cx;
+  p.toY=p.cy;
+  p.moveT=0;
+
+  p.px=mini.ox+p.cx*mini.cell+mini.cell/2;
+  p.py=mini.oy+p.cy*mini.cell+mini.cell/2;
+}
+
+function checkPlumDanger(){
+  const p=mini.player;
+
+  if(isHazardCell(mini,p.cx,p.cy)){
+    mini.time=Math.max(0,mini.time-2);
+    pop(p.px,p.py,'-2 sn 🌵');
+
+    p.cx=p.fromX;
+    p.cy=p.fromY;
+    p.toX=p.cx;
+    p.toY=p.cy;
+    p.moveT=0;
+
+    p.px=mini.ox+p.cx*mini.cell+mini.cell/2;
+    p.py=mini.oy+p.cy*mini.cell+mini.cell/2;
+
+    return;
+  }
+
+  for(const s of mini.snails){
+    if(s.cx===p.cx&&s.cy===p.cy){
+      mini.time=Math.max(0,mini.time-3);
+      pop(p.px,p.py,'-3 sn 🐌');
+      sendPlumStart();
+
+      return;
+    }
+  }
+}
+
+function moveSnails(dt){
+  mini.snailTick-=dt;
+
+  if(mini.snailTick>0)return;
+
+  mini.snailTick=mini.snailStep;
+
+  for(const s of mini.snails){
+    const nx=s.cx+(s.axis==='x'?s.dir:0);
+    const ny=s.cy+(s.axis==='y'?s.dir:0);
+
+    if(isPlumOpen(mini,nx,ny)){
+      s.cx=nx;
+      s.cy=ny;
+    }else{
+      s.dir*=-1;
+
+      if(Math.random()<.38){
+        s.axis=s.axis==='x'?'y':'x';
+      }
+    }
+  }
+}
+
+function updatePlum(dt){
+  mini.time-=dt;
+
+  if(mini.time<=0){
+    return endMini();
+  }
+
+  moveSnails(dt);
+
+  const p=mini.player;
+
+  if(p.moveT>0){
+    p.moveT-=dt*7.5;
+
+    const t=1-Math.max(0,p.moveT);
+    const sm=t*t*(3-2*t);
+
+    p.px=mini.ox+(p.fromX+(p.toX-p.fromX)*sm)*mini.cell+mini.cell/2;
+    p.py=mini.oy+(p.fromY+(p.toY-p.fromY)*sm)*mini.cell+mini.cell/2;
+
+    if(p.moveT<=0){
+      p.cx=p.toX;
+      p.cy=p.toY;
+
+      p.px=mini.ox+p.cx*mini.cell+mini.cell/2;
+      p.py=mini.oy+p.cy*mini.cell+mini.cell/2;
+
+      checkPlumDanger();
+    }
+  }else{
+    const a=axis();
+
+    let nx=p.cx;
+    let ny=p.cy;
+
+    if(Math.abs(a.x)>Math.abs(a.y)){
+      if(a.x<-.35)nx--;
+      else if(a.x>.35)nx++;
+    }else{
+      if(a.y<-.35)ny--;
+      else if(a.y>.35)ny++;
+    }
+
+    if(nx!==p.cx||ny!==p.cy){
+      if(mini.grid[ny]&&mini.grid[ny][nx]==='0'){
+        p.fromX=p.cx;
+        p.fromY=p.cy;
+        p.toX=nx;
+        p.toY=ny;
+        p.moveT=1;
+
+        if(nx>p.cx)turtle.face=1;
+        if(nx<p.cx)turtle.face=-1;
+      }
+    }
+  }
+
+  if(p.cx===mini.plum.cx&&p.cy===mini.plum.cy&&p.moveT<=0){
+    mini.score++;
+    pop(p.px,p.py,'+1 🟣');
+
+    resetPlumBoard(mini);
+
+    pop(p.px,p.py-18*SCALE,'Kademe yükseldi');
+  }
+
+  turtle.bob+=7*dt;
+}
+
+function drawPlum(){
+  ctx.fillStyle='#e8dbff';
+  ctx.fillRect(0,0,W,H);
+
+  drawText(
+    `Erik Labirenti  •  Kademe ${mini.level}`,
+    W/2,
+    38*SCALE,
+    22*SCALE,
+    'center',
+    '#59467d',
+    '900'
+  );
+
+  const m=mini;
+
+  for(let y=0;y<m.grid.length;y++){
+    for(let x=0;x<m.grid[y].length;x++){
+      const px=m.ox+x*m.cell;
+      const py=m.oy+y*m.cell;
+
+      if(m.grid[y][x]==='1'){
+        ctx.fillStyle='#8c73bd';
+        drawRoundedRect(px+2,py+2,m.cell-4,m.cell-4,9*SCALE);
+        ctx.fill();
+      }else{
+        ctx.fillStyle=m.reservedPath.has(cellKey(x,y))
+          ?'rgba(255,255,255,.62)'
+          :'rgba(255,255,255,.45)';
+
+        drawRoundedRect(px+3,py+3,m.cell-6,m.cell-6,10*SCALE);
+        ctx.fill();
+      }
+    }
+  }
+
+  for(const h of m.hazards){
+    drawText(
+      '🌵',
+      m.ox+h.cx*m.cell+m.cell/2,
+      m.oy+h.cy*m.cell+m.cell/2,
+      20*SCALE
+    );
+  }
+
+  for(const s of m.snails){
+    drawText(
+      '🐌',
+      m.ox+s.cx*m.cell+m.cell/2,
+      m.oy+s.cy*m.cell+m.cell/2,
+      20*SCALE
+    );
+  }
+
+  const px=m.ox+m.plum.cx*m.cell+m.cell/2;
+  const py=m.oy+m.plum.cy*m.cell+m.cell/2;
+
+  ctx.fillStyle='#7f4bc7';
+  ctx.beginPath();
+  ctx.ellipse(px,py,14*SCALE,17*SCALE,.2,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle='rgba(255,255,255,.34)';
+  ctx.beginPath();
+  ctx.arc(px-4*SCALE,py-6*SCALE,3*SCALE,0,Math.PI*2);
+  ctx.fill();
+
+  drawTurtle(m.player.px,m.player.py,Math.min(.78,m.cell/42),'happy');
+
+  drawText(
+    `Erik: ${m.score}   Salyangoz: ${m.snails.length}   Hız: ${m.snailStep.toFixed(2)}sn`,
+    W/2,
+    H-18*SCALE,
+    13.5*SCALE,
+    'center',
+    '#4b3b2f',
+    '800'
+  );
+}
+function strawberryDifficulty(wave){
+  return {
+    bushCount:clamp(8+wave*2,10,24),
+    targetCount:clamp(2+Math.ceil(wave*.75),3,9),
+    preview:clamp(3.4-wave*.32,1.15,3)
+  };
+}
+
+function createStrawberryBushes(count){
+  const bushes=[];
+  let tries=0;
+
+  const minDistance=clamp((82-count*1.55)*SCALE,42*SCALE,68*SCALE);
+
+  while(bushes.length<count&&tries<1400){
+    tries++;
+
+    const b={
+      x:rand(46*SCALE,W-46*SCALE),
+      y:rand(98*SCALE,H-58*SCALE),
+      target:false,
+      heart:false,
+      found:false,
+      wrong:false,
+      snail:0,
+      wiggle:rand(0,10)
+    };
+
+    if(bushes.every(o=>dist(o.x,o.y,b.x,b.y)>minDistance)){
+      bushes.push(b);
+    }
+  }
+
+  while(bushes.length<count){
+    bushes.push({
+      x:rand(46*SCALE,W-46*SCALE),
+      y:rand(98*SCALE,H-58*SCALE),
+      target:false,
+      heart:false,
+      found:false,
+      wrong:false,
+      snail:0,
+      wiggle:rand(0,10)
+    });
+  }
+
+  return bushes;
+}
+
+function createStrawberryMini(){
+  const m={
+    id:'strawberry',
+    time:55,
+    score:0,
+    hearts:0,
+    bushes:[],
+    x:W/2,
+    y:H*.68,
+    speed:moveSpeed(),
+    wave:0,
+    preview:0,
+    previewMax:0,
+    remaining:0,
+    combo:0,
+    slow:0,
+    cooldown:0,
+    currentBushCount:0,
+    currentTargetCount:0
+  };
+
+  newStrawberryWave(m);
+
+  return m;
+}
+
+function newStrawberryWave(m){
+  m.wave++;
+
+  const d=strawberryDifficulty(m.wave);
+
+  m.currentBushCount=d.bushCount;
+  m.currentTargetCount=Math.min(d.targetCount,d.bushCount-1);
+  m.preview=d.preview;
+  m.previewMax=d.preview;
+  m.remaining=m.currentTargetCount;
+  m.cooldown=0;
+
+  m.bushes=createStrawberryBushes(m.currentBushCount);
+
+  const choices=shuffleCells([...m.bushes]).slice(0,m.currentTargetCount);
+
+  for(const b of choices){
+    b.target=true;
+    b.heart=Math.random()<.16;
+  }
+}
+
+function nearestBush(m){
+  let best=null;
+  let bd=9999;
+
+  for(const b of m.bushes){
+    const d=dist(m.x,m.y,b.x,b.y);
+
+    if(d<bd){
+      bd=d;
+      best=b;
+    }
+  }
+
+  return {b:best,d:bd};
+}
+
+function inspectStrawberryBush(){
+  if(mini.preview>0||mini.cooldown>0)return;
+
+  const n=nearestBush(mini);
+  const b=n.b;
+
+  if(!b||n.d>34*SCALE){
+    pop(mini.x,mini.y-22*SCALE,'Yaklaş');
+    return;
+  }
+
+  if(b.target&&!b.found){
+    b.found=true;
+
+    mini.score++;
+    mini.remaining--;
+    mini.combo++;
+
+    if(b.heart){
+      mini.hearts++;
+      pop(b.x,b.y,'+1 ❤️🍓');
+    }else{
+      pop(b.x,b.y,'+1 🍓');
+    }
+
+    if(mini.combo>0&&mini.combo%3===0){
+      mini.score+=2;
+      pop(b.x,b.y-18*SCALE,'Kombo +2!');
+    }
+
+    if(mini.remaining<=0){
+      mini.cooldown=.55;
+      pop(mini.x,mini.y-28*SCALE,'Yeni koku geliyor');
+    }
+  }else if(!b.target&&!b.wrong){
+    b.wrong=true;
+    b.snail=1.4;
+
+    mini.combo=0;
+    mini.slow=.95;
+    mini.time=Math.max(0,mini.time-1.5);
+
+    pop(b.x,b.y,'-1.5 sn 🐌');
+  }
+}
+
+function updateStrawberry(dt){
+  mini.time-=dt;
+
+  if(mini.time<=0){
+    return endMini();
+  }
+
+  if(mini.cooldown>0){
+    mini.cooldown-=dt;
+
+    if(mini.cooldown<=0){
+      newStrawberryWave(mini);
+    }
+  }
+
+  if(mini.preview>0){
+    mini.preview-=dt;
+  }
+
+  if(mini.slow>0){
+    mini.slow-=dt;
+  }
+
+  const a=axis();
+  const speed=mini.speed*(mini.slow>0?.58:1);
+
+  if(a.x||a.y){
+    mini.x+=a.x*speed*dt;
+    mini.y+=a.y*speed*dt;
+
+    if(Math.abs(a.x)>.1){
+      turtle.face=a.x>0?1:-1;
+    }
+  }
+
+  mini.x=clamp(mini.x,34*SCALE,W-34*SCALE);
+  mini.y=clamp(mini.y,62*SCALE,H-34*SCALE);
+
+  turtle.bob+=(a.x||a.y?10:4)*dt;
+
+  for(const b of mini.bushes){
+    b.wiggle+=.025;
+
+    if(b.snail>0){
+      b.snail-=dt;
+    }
+  }
+
+  if(keys.action){
+    keys.action=false;
+    actionBuffer=0;
+    inspectStrawberryBush();
+  }
+}
+
+function drawBush(b){
+  const near=dist(mini.x,mini.y,b.x,b.y)<58*SCALE&&!b.found&&!b.wrong;
+  const visible=b.target&&(mini.preview>0||b.found);
+  const hint=b.target&&!b.found&&mini.preview<=0&&near;
+
+  ctx.save();
+
+  ctx.translate(b.x,b.y+Math.sin(b.wiggle)*2);
+
+  ctx.fillStyle=b.wrong
+    ?'rgba(126,142,86,.45)'
+    :near
+      ?'#8fd179'
+      :'#78bd65';
+
+  ctx.beginPath();
+  ctx.ellipse(-10*SCALE,0,16*SCALE,10*SCALE,-.5,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(9*SCALE,0,18*SCALE,11*SCALE,.5,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(0,-7*SCALE,16*SCALE,10*SCALE,0,0,Math.PI*2);
+  ctx.fill();
+
+  if(visible||hint){
+    ctx.strokeStyle=b.heart
+      ?'rgba(255,120,150,.95)'
+      :'rgba(255,255,255,.9)';
+
+    ctx.lineWidth=3*SCALE;
+
+    ctx.beginPath();
+    ctx.arc(0,0,28*SCALE,0,Math.PI*2);
+    ctx.stroke();
+  }
+
+  if(visible){
+    if(b.heart){
+      drawText('❤️',0,-12*SCALE,15*SCALE);
+    }
+
+    ctx.fillStyle='#ff6680';
+
+    ctx.beginPath();
+    ctx.moveTo(0,14*SCALE);
+    ctx.bezierCurveTo(-16*SCALE,-4*SCALE,-8*SCALE,-18*SCALE,0,-10*SCALE);
+    ctx.bezierCurveTo(8*SCALE,-18*SCALE,16*SCALE,-4*SCALE,0,14*SCALE);
+    ctx.fill();
+
+    ctx.fillStyle='#fff1a6';
+    ctx.fillRect(-3*SCALE,-2*SCALE,2*SCALE,2*SCALE);
+    ctx.fillRect(4*SCALE,2*SCALE,2*SCALE,2*SCALE);
+    ctx.fillRect(-7*SCALE,5*SCALE,2*SCALE,2*SCALE);
+  }
+
+  if(b.snail>0){
+    drawText('🐌',0,0,20*SCALE);
+  }
+
+  ctx.restore();
+}
+
+function drawStrawberry(){
+  ctx.fillStyle='#cdefbc';
+  ctx.fillRect(0,0,W,H);
+
+  drawText(
+    'Kokuyu Hatırla',
+    W/2,
+    30*SCALE,
+    22*SCALE,
+    'center',
+    '#6a4a38',
+    '900'
+  );
+
+  const info=mini.preview>0
+    ?`Ezber: ${Math.max(0,mini.preview).toFixed(1)} sn`
+    :'Yaklaş ve TOPLA';
+
+  drawText(
+    `${info}  •  Tur ${mini.wave}  •  Çalı ${mini.currentBushCount}  •  Çilek ${mini.currentTargetCount}`,
+    W/2,
+    54*SCALE,
+    11.5*SCALE,
+    'center',
+    '#6d5b44',
+    '800'
+  );
+
+  for(const b of mini.bushes){
+    drawBush(b);
+  }
+
+  drawTurtle(mini.x,mini.y,.95,'happy');
+
+  const combo=mini.combo>=2?`   Kombo: ${mini.combo}`:'';
+
+  drawText(
+    `Çilek: ${mini.score}  Kalp: ${mini.hearts}${combo}`,
+    W/2,
+    H-18*SCALE,
+    15*SCALE,
+    'center',
+    '#4b3b2f',
+    '800'
+  );
+
+  if(mini.slow>0){
+    drawText(
+      'Salyangoz çıktı, kaplumbağa ağırlaştı.',
+      W/2,
+      H-40*SCALE,
+      12*SCALE,
+      'center',
+      '#6d5b44',
+      '800'
+    );
+  }
+}
 function startFinal(){state='final';mini=null;nearStation=null;const total=basket.strawberry+basket.lemon+basket.plum;if(total<6)showMessage('Sepet biraz utangaç kaldı ama piknik yine de olur.',4);else showMessage('Sepet açılıyor. Kaplumbağa final pikniğine görev bilinciyle geldi.',4)}
 function dominantFlavor(){const e=[['strawberry',basket.strawberry],['lemon',basket.lemon],['plum',basket.plum]].sort((a,b)=>b[1]-a[1]);if(e[0][1]===0)return'empty';if(Math.abs(e[0][1]-e[2][1])<=2&&e[2][1]>0)return'balanced';return e[0][0]}function finalText(){const d=dominantFlavor();if(basket.heart>=5)return'Kaplumbağa yol boyunca sadece yiyecek değil, küçük küçük sevgi de toplamış.';if(d==='balanced')return'Sepette her şeyden biraz var. Çünkü güzel şeyler tek tatla olmaz.';if(d==='strawberry')return'Bugün sepetin çilek kokuyor. Demek kalbin tatlı yoldan gelmiş.';if(d==='lemon')return'Biraz ekşi, biraz tatlı. Tam bizim hikâyemiz gibi.';if(d==='plum')return'Sepetin mor tarafı konuşuyor: bazı yollar labirenttir ama sonunda piknik vardır.';return'Sepet küçük olabilir ama kaplumbağanın niyeti kocaman.'}
 function drawFinal(){const g=ctx.createRadialGradient(W/2,H/2,30,W/2,H/2,Math.max(W,H));g.addColorStop(0,'#fff7df');g.addColorStop(1,'#cfeec5');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);drawText('Piknik Sepeti Açıldı',W/2,48*SCALE,26*SCALE,'center','#4f7f43','900');const cw=Math.min(W*.82,420*SCALE),ch=Math.min(H*.26,190*SCALE);ctx.save();ctx.translate(W/2,H/2+10*SCALE);ctx.rotate(Math.sin(performance.now()/800)*.015);ctx.fillStyle='#ff9fb1';drawRoundedRect(-cw/2,-ch/2,cw,ch,24*SCALE);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=7*SCALE;ctx.beginPath();ctx.moveTo(-cw/2,0);ctx.lineTo(cw/2,0);ctx.moveTo(0,-ch/2);ctx.lineTo(0,ch/2);ctx.stroke();const foods=[];for(let i=0;i<Math.min(basket.strawberry,10);i++)foods.push('🍓');for(let i=0;i<Math.min(basket.lemon,10);i++)foods.push('🍋');for(let i=0;i<Math.min(basket.plum,10);i++)foods.push('🟣');for(let i=0;i<Math.min(basket.heart,6);i++)foods.push('❤️');if(!foods.length)foods.push('🐢');foods.forEach((f,i)=>{const cols=Math.max(4,Math.floor(cw/(46*SCALE))),x=-cw*.36+(i%cols)*42*SCALE,y=-ch*.25+Math.floor(i/cols)*38*SCALE;drawText(f,x,y,26*SCALE)});ctx.restore();drawTurtle(W*.22,H*.72,1.05,'happy');ctx.save();ctx.translate(W*.78,H*.72);drawText('R',0,-34*SCALE,20*SCALE,'center','#4b3b2f','900');ctx.fillStyle='#7fb4ff';ctx.beginPath();ctx.arc(0,0,24*SCALE,0,Math.PI*2);ctx.fill();ctx.fillStyle='#4b3b2f';ctx.beginPath();ctx.arc(-7*SCALE,-5*SCALE,3*SCALE,0,Math.PI*2);ctx.arc(7*SCALE,-5*SCALE,3*SCALE,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#4b3b2f';ctx.lineWidth=2*SCALE;ctx.beginPath();ctx.arc(0,0,8*SCALE,.2,Math.PI-.2);ctx.stroke();ctx.restore();const bw=Math.min(W-28,720*SCALE);ctx.fillStyle='rgba(255,255,255,.72)';drawRoundedRect(W/2-bw/2,H-112*SCALE,bw,78*SCALE,24*SCALE);ctx.fill();wrapText(finalText(),W/2,H-84*SCALE,bw-24*SCALE,17*SCALE,19*SCALE);drawText('Haritaya dönmek için E / BAŞLA.',W/2,H-45*SCALE,12.5*SCALE,'center','#6d5b44','700');if(keys.action){keys.action=false;actionBuffer=0;state='map';showMessage('Bahçeye geri döndün. Sepeti büyütmek serbest.',3)}}
